@@ -13,7 +13,7 @@ ___
 
 ### A Note on Security
 
-This is experimental, alpha software, in a state of ongoing development, intended for usage on testnets.  
+This is experimental, alpha software, intended for usage on testnets.  It is no longer being maintained, and should not be used in production.
 
 When exporting a project, __*do not*__ "Export With Debug".  If you decide to recompile the Rust library, use the `--release` tag when building.
 ___
