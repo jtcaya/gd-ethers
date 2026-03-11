@@ -119,8 +119,6 @@ GodotEthers combines the orchestration abilities of Godot with the signing capab
 
 Ethers-rs is responsible for RLP-encoding transaction data, ECDSA signing, address calculation, and Keccak hashing.  It also encodes and decodes the elementary Solidity types after they have been sorted by the Calldata singleton.
 
-[Alloy](https://github.com/alloy-rs) is the successor of Ethers-rs, and will replace it in a future update of GodotEthers.
-
 Having a Rust library also gives GodotEthers access to Rust crates containing useful cryptographic primitives.  For example, the pbkdf2 crate is used to derive the keystore encryption/decryption key from an account password.  Crates like openssl could also be easily integrated into the library, if needed.
 
 In addition to games, GodotEthers can be used to decentralize dApp interfaces.  Instead of connecting to a website and using a web wallet, a contract interface can now be built in Godot and distributed to users in open source format.  Blockchain bots can also be made more accessible, with user-friendly interfaces.
