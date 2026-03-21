@@ -1,5 +1,5 @@
 use godot::prelude::*;
-use godot::engine::Engine;
+use godot::classes::Engine;
 use godot::classes::Object;
 use ethers::{core::{abi::{AbiDecode, AbiEncode}, k256::elliptic_curve::consts::{U248, U8}, types::*}, prelude::SignerMiddleware, providers::*, signers::*};
 use ethers_contract::{abigen};
@@ -15,17 +15,18 @@ use k256::ecdsa::{Signature, VerifyingKey, SigningKey};
 use k256::PublicKey as K256PublicKey;
 use k256::elliptic_curve::sec1::ToEncodedPoint;
 
-struct GodotEthers;
+struct gdEthers;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for GodotEthers {
+unsafe impl ExtensionLibrary for gdEthers {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
+            let signerInst = GodotSigner::new_alloc();
             // The StringName identifies your singleton and can be
             // used later to access it.
             Engine::singleton().register_singleton(
-                StringName::from("GodotSigner"),
-                GodotSigner::new_alloc().upcast(),
+                "GodotSigner",
+                &signerInst,
             );
         }
     }
@@ -40,12 +41,12 @@ unsafe impl ExtensionLibrary for GodotEthers {
             // as it has to be freed manually - unregistering singleton 
             // doesn't do it automatically.
             let singleton = engine
-                .get_singleton(singleton_name.clone())
+                .get_singleton(&singleton_name)
                 .expect("cannot retrieve the singleton");
 
             // Unregistering singleton and freeing the object itself is needed 
             // to avoid memory leaks and warnings, especially for hot reloading.
-            engine.unregister_singleton(singleton_name);
+            engine.unregister_singleton(&singleton_name);
             singleton.free();
         }
     }
@@ -102,7 +103,7 @@ fn get_address(_key: PackedByteArray) -> GString {
         None => "".to_string(),
         };
 
-    let return_string: GString = format!("0x{}", key_slice).into();
+    let return_string: GString = format!("0x{}", key_slice).to_godot();
 
     return_string
 }
@@ -195,7 +196,7 @@ fn get_function_selector(function_bytes: PackedByteArray) -> GString {
     
     let selector = hex::encode(selector_bytes);
     
-    selector.to_string().into()
+    selector.to_string().to_godot()
 
 }
 
@@ -207,7 +208,7 @@ fn get_function_selector(function_bytes: PackedByteArray) -> GString {
 #[func]
 fn encode_bool (_bool: bool) -> GString {
     let encoded = ethers::abi::AbiEncode::encode(_bool);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -215,7 +216,7 @@ fn encode_bool (_bool: bool) -> GString {
 fn encode_address (_address: GString) -> GString {
     let address = string_to_address(_address);
     let encoded = ethers::abi::AbiEncode::encode(address);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -223,7 +224,7 @@ fn encode_address (_address: GString) -> GString {
 fn encode_bytes (_bytes: PackedByteArray) -> GString {
     let bytes: Bytes = _bytes.to_vec().into();
     let encoded = ethers::abi::AbiEncode::encode(bytes);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 
 }
@@ -232,7 +233,7 @@ fn encode_bytes (_bytes: PackedByteArray) -> GString {
 fn encode_string (_string: GString) -> GString {
     let string: String = _string.into();
     let encoded = ethers::abi::AbiEncode::encode(string);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -240,7 +241,7 @@ fn encode_string (_string: GString) -> GString {
 fn encode_uint8 (_uint8: GString) -> GString {
     let uint8: u8 = _uint8.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(uint8);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -248,7 +249,7 @@ fn encode_uint8 (_uint8: GString) -> GString {
 fn encode_uint16 (_uint16: GString) -> GString {
     let uint16: u16 = _uint16.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(uint16);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -256,7 +257,7 @@ fn encode_uint16 (_uint16: GString) -> GString {
 fn encode_uint32 (_uint32: GString) -> GString {
     let uint32: u32 = _uint32.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(uint32);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -264,7 +265,7 @@ fn encode_uint32 (_uint32: GString) -> GString {
 fn encode_uint64 (_uint64: GString) -> GString {
     let uint64: u64 = _uint64.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(uint64);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -272,7 +273,7 @@ fn encode_uint64 (_uint64: GString) -> GString {
 fn encode_uint128 (_uint128: GString) -> GString {
     let uint128: U128 = _uint128.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(uint128);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -280,7 +281,7 @@ fn encode_uint128 (_uint128: GString) -> GString {
 fn encode_uint256 (_big_uint: GString) -> GString {
     let u256 = string_to_uint256(_big_uint);
     let encoded = ethers::abi::AbiEncode::encode(u256);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -288,7 +289,7 @@ fn encode_uint256 (_big_uint: GString) -> GString {
 fn encode_int8 (_int8: GString) -> GString {
     let int8: i8 = _int8.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(int8);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -296,7 +297,7 @@ fn encode_int8 (_int8: GString) -> GString {
 fn encode_int16 (_int16: GString) -> GString {
     let int16: i16 = _int16.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(int16);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -304,7 +305,7 @@ fn encode_int16 (_int16: GString) -> GString {
 fn encode_int32 (_int32: GString) -> GString {
     let int32: i32 = _int32.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(int32);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -312,7 +313,7 @@ fn encode_int32 (_int32: GString) -> GString {
 fn encode_int64 (_int64: GString) -> GString {
     let int64: i64 = _int64.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(int64);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -320,7 +321,7 @@ fn encode_int64 (_int64: GString) -> GString {
 fn encode_int128 (_int128: GString) -> GString {
     let int128: i128 = _int128.to_string().parse().unwrap();
     let encoded = ethers::abi::AbiEncode::encode(int128);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -328,7 +329,7 @@ fn encode_int128 (_int128: GString) -> GString {
 fn encode_int256 (_big_int: GString) -> GString {
     let i256: I256 = I256::try_from(_big_int.to_string()).unwrap();
     let encoded = ethers::abi::AbiEncode::encode(i256);
-    let return_string: GString = hex::encode(encoded).into();
+    let return_string: GString = hex::encode(encoded).to_godot();
     return_string
 }
 
@@ -340,7 +341,7 @@ fn encode_int256 (_big_int: GString) -> GString {
 fn decode_bool (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: bool = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -348,7 +349,7 @@ fn decode_bool (_message: GString) -> GString {
 fn decode_address (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: Address = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -358,14 +359,14 @@ fn decode_bytes (_message: GString) -> GString {
     let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
     let decoded_array: Vec<u8> = decoded.iter().map(|e| *e as u8).collect();
     let decoded_hex = hex::encode(decoded_array);
-    decoded_hex.into()
+    decoded_hex.to_godot()
 }
 
 #[func]
 fn decode_string (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: String = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = decoded.into();
+    let return_string: GString = decoded.to_godot();
     return_string
 }
 
@@ -373,7 +374,7 @@ fn decode_string (_message: GString) -> GString {
 fn decode_uint8 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: u8 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -381,7 +382,7 @@ fn decode_uint8 (_message: GString) -> GString {
 fn decode_uint16 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: u16 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -389,7 +390,7 @@ fn decode_uint16 (_message: GString) -> GString {
 fn decode_uint32 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: u32 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -397,7 +398,7 @@ fn decode_uint32 (_message: GString) -> GString {
 fn decode_uint64 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: u64 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -405,7 +406,7 @@ fn decode_uint64 (_message: GString) -> GString {
 fn decode_uint128 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: u128 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -413,7 +414,7 @@ fn decode_uint128 (_message: GString) -> GString {
 fn decode_uint256 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: U256 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -421,7 +422,7 @@ fn decode_uint256 (_message: GString) -> GString {
 fn decode_int8 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: i8 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -429,7 +430,7 @@ fn decode_int8 (_message: GString) -> GString {
 fn decode_int16 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: i16 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -437,7 +438,7 @@ fn decode_int16 (_message: GString) -> GString {
 fn decode_int32 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: i32 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -445,7 +446,7 @@ fn decode_int32 (_message: GString) -> GString {
 fn decode_int64 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: i64 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -453,7 +454,7 @@ fn decode_int64 (_message: GString) -> GString {
 fn decode_int128 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: i128 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -461,7 +462,7 @@ fn decode_int128 (_message: GString) -> GString {
 fn decode_int256 (_message: GString) -> GString {
     let raw_hex: String = _message.to_string();
     let decoded: I256 = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let return_string: GString = format!("{:?}", decoded).into();
+    let return_string: GString = format!("{:?}", decoded).to_godot();
     return_string
 }
 
@@ -502,7 +503,7 @@ fn arithmetic(_number1: GString, _number2: GString, _operation: GString) -> GStr
         output = number1;
     }
     
-    output.to_string().into()
+    output.to_string().to_godot()
 
 }
 
@@ -679,7 +680,7 @@ fn get_address_from_public_key(public_key: PackedByteArray) -> GString {
         None => "".to_string(),
         };
 
-    let return_string: GString = format!("0x{}", key_slice).into();
+    let return_string: GString = format!("0x{}", key_slice).to_godot();
 
     return_string
 }
@@ -699,7 +700,7 @@ fn get_public_key(key: PackedByteArray) -> GString {
 
     let public_key = hex::encode(_public_key);
 
-    public_key.into()
+    public_key.to_godot()
 }
 
 
@@ -715,7 +716,7 @@ fn rlp_encode(_message: GString) -> PackedByteArray {
 fn rlp_decode(_bytes: PackedByteArray) -> GString {
     let bytes = _bytes.to_vec();
     let message: String = rlp::decode(&bytes).unwrap();
-    message.into()
+    message.to_godot()
 }
 
 
@@ -758,7 +759,7 @@ fn get_signed_calldata(_tx: Eip1559TransactionRequest, _wallet: LocalWallet) -> 
 
     let signed_calldata = hex::encode(rlp_signed);
 
-    signed_calldata.into()
+    signed_calldata.to_godot()
 }
 
 

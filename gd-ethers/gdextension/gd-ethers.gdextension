@@ -1,0 +1,14 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.2
+reloadable = true
+
+[libraries]
+linux.debug.x86_64 =     "res://addons/gd-ethers/gdextension/gd-ethers.so"
+linux.release.x86_64 =   "res://addons/gd-ethers/gdextension/gd-ethers.so"
+windows.debug.x86_64 =   "res://addons/gd-ethers/gdextension/gd-ethers.dll"
+windows.release.x86_64 = "res://addons/gd-ethers/gdextension/gd-ethers.dll"
+macos.debug =            "res://addons/gd-ethers/gdextension/gd-ethers.dylib"
+macos.release =          "res://addons/gd-ethers/gdextension/gd-ethers.dylib"
+macos.debug.arm64 =      "res://addons/gd-ethers/gdextension/gd-ethers.dylib"
+macos.release.arm64 =    "res://addons/gd-ethers/gdextension/gd-ethers.dylib"
